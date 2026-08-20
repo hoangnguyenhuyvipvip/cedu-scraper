@@ -1,0 +1,426 @@
+{
+  "name": "Auto Post X - Scheduled",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs",
+          "mode": "list",
+          "cachedResultName": "test X 20.8",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "c5592ceb-4da0-42a3-9cbb-7221243802a3",
+      "name": "Read Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -496,
+        64
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fbQt7IdUvSNUtzjB",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst day = String(now.getDate()).padStart(2, '0');\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst today = `${day}/${month}/${now.getFullYear()}`;\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  const d = String(item.json['Date'] || '').trim();\n  const s = String(item.json['Status'] || '').trim().toLowerCase();\n  const caption = String(item.json['Caption'] || '').trim();\n\n  if (d !== today || s === 'done' || !caption) continue;\n\n  const [dayPart, monthPart] = d.split('/');\n  item.json.filePattern = `${dayPart}.${monthPart}`;\n  out.push(item);\n}\n\nreturn out;"
+      },
+      "id": "3253a367-df99-4125-aba9-f553ed2afab4",
+      "name": "Filter and Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ \"name contains '\" + $json.filePattern + \"' and '14ml_I9H4imfB7SMN5fPUg26c7OoCM7vV' in parents\" }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType)"
+            },
+            {
+              "name": "pageSize",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7cfb8849-4525-4433-83ed-b1799c034682",
+      "name": "Search File on Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        64
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xA44p5fhaWUIEAV5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.files[0].id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "media"
+        }
+      },
+      "id": "9012e3c5-fca3-4ef5-b901-af5284b7ae3b",
+      "name": "Download File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        288,
+        64
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xA44p5fhaWUIEAV5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "media"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "683094a0-c08a-45b7-9b69-fff9d9eaa01e",
+      "name": "Upload Media to X",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        64
+      ],
+      "credentials": {
+        "twitterOAuth1Api": {
+          "id": "XMjSsConmGzrap7e",
+          "name": "X OAuth account"
+        },
+        "oAuth1Api": {
+          "id": "rxuvr8E0ehQWnACH",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs",
+          "mode": "list",
+          "cachedResultName": "test X 20.8",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "done",
+            "Caption": "=={{ $('Filter and Prepare').item.json['Caption'] }}"
+          },
+          "matchingColumns": [
+            "Caption"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8746d280-c5c3-4451-ae76-e2b57802eb31",
+      "name": "Update Status Scheduled",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        272,
+        -352
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fbQt7IdUvSNUtzjB",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11,
+              "triggerAtMinute": 47
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -752,
+        64
+      ],
+      "id": "3074bfa6-29bc-48e2-adab-f86345bf54aa",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.x.com/2/tweets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Filter and Prepare').item.json['Caption'], media: { media_ids: [$json.media_id_string] } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        64
+      ],
+      "id": "9ce5d7d7-261f-4460-8bc2-a33672bef9d2",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth1Api": {
+          "id": "rxuvr8E0ehQWnACH",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/1xnoZzy7bqCONusj7A1ELwFAmPNeVwSwnjNb9jJEqyxs/values/Trang%20t%C3%ADnh1!C\" + $('Filter and Prepare').item.json['row_number'] + \"?valueInputOption=RAW\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"values\": [[\"done\"]]}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        64
+      ],
+      "id": "63a7209e-b7b6-47c8-b4ce-f2ea6e5b0546",
+      "name": "HTTP Request1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "fbQt7IdUvSNUtzjB",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter and Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter and Prepare": {
+      "main": [
+        [
+          {
+            "node": "Search File on Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search File on Drive": {
+      "main": [
+        [
+          {
+            "node": "Download File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File": {
+      "main": [
+        [
+          {
+            "node": "Upload Media to X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Media to X": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status Scheduled": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7904701d-b759-4fcc-9778-107a7396f97e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b59dd89e1a2e3369e669a2ed3e520ef1a361e70aacbed3d76b6586258247b620"
+  },
+  "nodeGroups": [],
+  "id": "XdV60bJ0hmZusXMl",
+  "tags": []
+}
