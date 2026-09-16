@@ -1,9 +1,0 @@
-# Sample/downloaded videos
-snaptik.com.lc*
-
-# Generated output videos
-*_stroke.mp4
-
-# Python
-__pycache__/
-*.pyc
